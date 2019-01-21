@@ -1,6 +1,6 @@
 {
-    "name": "webchain/scim-filter-to-dql",
-    "description": "Take a SCIM filter string and parses it into an DQL query",
+    "name": "webchainro/scim-filter-to-dqb",
+    "description": "Takes a SCIM filter string and parses it into a Doctrine QueryBuilder",
     "keywords": ["SCIM", "AST", "parser", "SCIM parser", "SCIM filter parser", "SCIM AST", "DQL", "Doctrine"],
     "type": "library",
     "authors": [
@@ -12,8 +12,8 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Webchain\\ScimFilterToDql\\": "src/",
-            "Webchain\\ScimFilterToDql\\Tests": "tests/"
+            "Webchain\\ScimFilterToDqb\\": "src/",
+            "Webchain\\ScimFilterToDqb\\Tests": "tests/"
         }
     },
     "require": {

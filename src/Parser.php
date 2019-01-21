@@ -1,6 +1,6 @@
 <?php
 
-namespace Webchain\ScimFilterToDql;
+namespace Webchain\ScimFilterToDqb;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\Composite;
