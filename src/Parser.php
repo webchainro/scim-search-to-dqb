@@ -61,7 +61,7 @@ class Parser
     private function buildPredicatesRecursively(Node $node, $negation = false, $currentAlias = self::PRIMARY_ENTITY_ALIAS)
     {
         if ($node instanceof Negation) {
-            return $this->buildPredicatesRecursively($node, true, $currentAlias);
+            return $this->buildPredicatesRecursively($node->getFilter(), true, $currentAlias);
         }
 
         if($node instanceof Conjunction) {
