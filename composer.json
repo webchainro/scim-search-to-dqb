@@ -1,0 +1,26 @@
+{
+    "name": "webchain/scim-filter-to-dql",
+    "description": "Take a SCIM filter string and parses it into an DQL query",
+    "keywords": ["SCIM", "AST", "parser", "SCIM parser", "SCIM filter parser", "SCIM AST", "DQL", "Doctrine"],
+    "type": "library",
+    "authors": [
+        {
+            "name": "Andrei Gorgan",
+            "email": "andrei.gorgan@webchain.ro"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Webchain\\ScimFilterToDql\\": "src/",
+            "Webchain\\ScimFilterToDql\\Tests": "tests/"
+        }
+    },
+    "require": {
+        "tmilos/scim-filter-parser": "^1.3",
+        "doctrine/orm": "^3.0@dev"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7"
+    }
+}
