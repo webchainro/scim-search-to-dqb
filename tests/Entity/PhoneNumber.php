@@ -1,19 +1,42 @@
 <?php
 
-namespace WO2\API\Identity\Model\SCIM;
+namespace Webchain\ScimFilterToDqb\Tests\Entity;
 
-use Assert\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @ORM\Table(name="phone_number")
+ *
+ * @ORM\Entity
+ */
 class PhoneNumber
 {
-    const TYPE_MOBILE = 'mobile';
-    const TYPE_HOME = 'home';
-    const TYPE_WORK = 'work';
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="type", type="string", nullable=false)
+     */
     private $type;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="value", type="string", nullable=false)
+     */
     private $value;
+    /**
+     * @ORM\ManyToOne(targetEntity="User", inversedBy="phoneNumbers")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
+     */
+    private $user;
+    /**
+     * @var int
+     * @ORM\Id
+     * @ORM\Column(name="id", type="int", nullable=false)
+     */
+    private $id;
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getType()
     {
@@ -25,12 +48,11 @@ class PhoneNumber
      */
     public function setType($type)
     {
-        Assertion::choice($type, [self::TYPE_HOME, self::TYPE_MOBILE, self::TYPE_WORK]);
         $this->type = $type;
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getValue()
     {
@@ -42,7 +64,38 @@ class PhoneNumber
      */
     public function setValue($value)
     {
-        Assertion::string($value);
         $this->value = $value;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param mixed $user
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
     }
 }

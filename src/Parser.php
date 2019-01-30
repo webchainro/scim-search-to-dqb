@@ -27,7 +27,9 @@ class Parser
     /** @var QueryBuilder */
     private $queryBuilder;
     /** @var int  */
-    private $joinsCounter = 0;
+    private $joinedMap = [];
+
+    private $primaryEntityMetadata;
 
     private $builderParameters = [];
 
@@ -36,6 +38,7 @@ class Parser
         $this->entityManager = $entityManager;
         $this->stringParser = new StringParser();
         $this->primaryEntityClass = $primaryEntityClass;
+        $this->primaryEntityMetadata = $entityManager->getMetadataFactory()->getMetadataFor($primaryEntityClass);
     }
 
     /**
@@ -137,18 +140,28 @@ class Parser
         $attributesCount = count($attributePath->attributeNames);
 
         if ($attributesCount === 1) {
-            $nextAlias = self::JOINS_ALIAS_SUFFIX . $this->joinsCounter;
-            $this->queryBuilder->leftJoin($currentAlias . '.' . $attributePath->attributeNames[0], $nextAlias);
-            $this->joinsCounter++;
+            $joining = $currentAlias . '.' . $attributePath->attributeNames[0];
+            if (!isset($this->joinedMap[$joining])) {
+                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
+                $this->queryBuilder->leftJoin($joining, $nextAlias);
+                $this->joinedMap[$joining] = $nextAlias;
+            } else {
+                $nextAlias = $this->joinedMap[$joining];
+            }
 
             return $this->buildPredicatesRecursively($array['ValuePath'][1], $negation, $nextAlias);
         }
 
         foreach ($attributePath->attributeNames as $key => $attributeName) {
-            $nextAlias = self::JOINS_ALIAS_SUFFIX . $this->joinsCounter;
-            $this->queryBuilder->leftJoin($currentAlias . '.' . $attributeName, $nextAlias);
+            $joining = $currentAlias . '.' . $attributeName;
+            if (!isset($this->joined[$joining])) {
+                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
+                $this->queryBuilder->leftJoin($joining, $nextAlias);
+                $this->joined[$joining] = $nextAlias;
+            } else {
+                $nextAlias = $this->joined[$joining];
+            }
 
-            $this->joinsCounter++;
             $currentAlias = $nextAlias;
         }
 
@@ -164,8 +177,7 @@ class Parser
     {
         $attributesCount = count($node->attributePath->attributeNames);
         if ($attributesCount === 1) {
-            $attributeName = $currentAlias . '.' . $node->attributePath->attributeNames[0];
-            return $this->buildDqlCondition($node, $attributeName, $negation);
+            return $this->buildDqlCondition($node, $currentAlias, $node->attributePath->attributeNames[0], $negation);
         }
 
         $lastIndex = $attributesCount - 1;
@@ -174,90 +186,118 @@ class Parser
                 continue;
             }
 
-            $nextAlias = self::JOINS_ALIAS_SUFFIX . $this->joinsCounter;
-            $this->queryBuilder->leftJoin($currentAlias . '.' . $attributeName, $nextAlias);
+            $joining = $currentAlias . '.' . $attributeName;
+            if (!isset($this->joined[$joining])) {
+                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
+                $this->queryBuilder->leftJoin($joining, $nextAlias);
+                $this->joined[$joining] = $nextAlias;
+            } else {
+                $nextAlias = $this->joined[$joining];
+            }
 
-            $this->joinsCounter++;
             $currentAlias = $nextAlias;
         }
 
-        $attributeName = $currentAlias . '.' . $node->attributePath->attributeNames[$lastIndex];
+        $columnName = $node->attributePath->attributeNames[$lastIndex];
 
-        return $this->buildDqlCondition($node, $attributeName, $negation);
+        return $this->buildDqlCondition($node, $currentAlias, $columnName, $negation);
     }
 
-    private function buildDqlCondition(ComparisonExpression $comparisonExpression, string $attributeName, bool $negation)
+    private function buildDqlCondition(ComparisonExpression $comparisonExpression, string $alias, string $columnsName, bool $negation)
     {
         $condition = null;
         $nextParameterIndex = count($this->builderParameters) + 1;
         $compareValue = $comparisonExpression->compareValue;
+
+        if ($alias === self::PRIMARY_ENTITY_ALIAS && $this->primaryEntityMetadata->isCollectionValuedAssociation($columnsName)) {
+            $joining = $alias . '.' . $columnsName;
+            if (!isset($this->joined[$joining])) {
+                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
+                $this->queryBuilder->leftJoin($joining, $nextAlias);
+                $this->joined[$joining] = $nextAlias;
+            } else {
+                $nextAlias = $this->joined[$joining];
+            }
+        }
+
+        $x = $alias . '.' . $columnsName;
+
         $expression = $this->queryBuilder->expr();
 
         switch ($comparisonExpression->operator) {
             case 'eq':
                 if ($negation) {
-                    $condition = $expression->eq($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->neq($x, "?$nextParameterIndex");
                 } else {
-                    $condition = $expression->neq($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->eq($x, "?$nextParameterIndex");
+                }
+
+                $this->builderParameters[$nextParameterIndex] = $compareValue;
+                break;
+            case 'ne':
+                if ($negation) {
+                    $condition = $expression->eq($x, "?$nextParameterIndex");
+                } else {
+                    $condition = $expression->neq($x, "?$nextParameterIndex");
                 }
 
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
             case 'co':
                 if ($negation) {
-                    $condition = $expression->notLike($attributeName, $expression->literal('%' . $compareValue .'%'));
+                    $condition = $expression->notLike($x, $expression->literal('%' . $compareValue .'%'));
                 } else {
-                    $condition = $expression->like($attributeName, $expression->literal('%' . $compareValue .'%'));
+                    $condition = $expression->like($x, $expression->literal('%' . $compareValue .'%'));
                 }
                 break;
             case 'sw':
                 if ($negation) {
-                    $condition = $expression->notLike($attributeName, $expression->literal($compareValue .'%'));
+                    $condition = $expression->notLike($x, $expression->literal($compareValue .'%'));
                 } else {
-                    $condition = $expression->like($attributeName, $expression->literal($compareValue .'%'));
+                    $condition = $expression->like($x, $expression->literal($compareValue .'%'));
                 }
                 break;
             case 'pr':
                 if ($negation) {
-                    $condition = $expression->isNull($attributeName);
+                    $condition = $expression->isNull($x);
                 } else {
-                    $condition = $expression->isNotNull($attributeName);
+                    $condition = $expression->isNotNull($x);
                 }
                 break;
             case 'gt':
                 if ($negation) {
-                    $condition = $expression->lte($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->lte($x, "?$nextParameterIndex");
                 } else {
-                    $condition = $expression->gt($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->gt($x, "?$nextParameterIndex");
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
             case 'ge':
                 if ($negation) {
-                    $condition = $expression->lt($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->lt($x, "?$nextParameterIndex");
                 } else {
-                    $condition = $expression->gte($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->gte($x, "?$nextParameterIndex");
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
             case 'lt':
                 if ($negation) {
-                    $condition = $expression->gte($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->gte($x, "?$nextParameterIndex");
                 } else {
-                    $condition = $expression->lt($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->lt($x, "?$nextParameterIndex");
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
             case 'le':
                 if ($negation) {
-                    $condition = $expression->gt($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->gt($x, "?$nextParameterIndex");
                 } else {
-                    $condition = $expression->lte($attributeName, "?$nextParameterIndex");
+                    $condition = $expression->lte($x, "?$nextParameterIndex");
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
             default:
-                throw new \InvalidArgumentException('Operator ' . $comparisonExpression->operator . ' not recognized by SCIM. See https://ldapwiki.com/wiki/SCIM%20Filtering');
+                throw new \InvalidArgumentException('Operator ' . $comparisonExpression->operator . ' not recognized by SCIM. See https://tools.ietf.org/html/rfc7644#page-17');
         }
 
         return $condition;

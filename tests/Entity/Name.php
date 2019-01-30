@@ -1,16 +1,42 @@
 <?php
 
-namespace WO2\API\Identity\Model\SCIM;
+namespace Webchain\ScimFilterToDqb\Tests\Entity;
 
-use Assert\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
-class FullName
+/**
+ * @ORM\Table(name="meta")
+ *
+ * @ORM\Entity
+ */
+class Name
 {
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="family_name", type="string", nullable=false)
+     */
     protected $familyName;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="given_name", type="string", nullable=false)
+     */
     protected $givenName;
+    /**
+     * @var User
+     * @ORM\OneToOne(targetEntity="User", mappedBy="name")
+     */
+    private $user;
+    /**
+     * @var int
+     * @ORM\Id
+     * @ORM\Column(name="id", type="int", nullable=false)
+     */
+    private $id;
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getFamilyName()
     {
@@ -22,12 +48,11 @@ class FullName
      */
     public function setFamilyName($familyName)
     {
-        Assertion::string($familyName);
         $this->familyName = $familyName;
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getGivenName()
     {
@@ -39,7 +64,38 @@ class FullName
      */
     public function setGivenName($givenName)
     {
-        Assertion::string($givenName);
         $this->givenName = $givenName;
+    }
+
+    /**
+     * @return User
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param User $user
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
     }
 }

@@ -1,13 +1,40 @@
 <?php
 
-namespace WO2\API\Identity\Model\SCIM;
+namespace Webchain\ScimFilterToDqb\Tests\Entity;
 
-use Assert\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @ORM\Table(name="meta")
+ *
+ * @ORM\Entity
+ */
 class Meta
 {
+    /**
+     * @var \DateTime|null
+     *
+     * @ORM\Column(name="created", type="datetime", nullable=true)
+     */
     private $created;
-    private $location;
+    /**
+     * @var \DateTime|null
+     *
+     * @ORM\Column(name="last_modified", type="datetime", nullable=true)
+     */
+    private $lastModified;
+    /**
+     * @var User
+     * @ORM\OneToOne(targetEntity="User", mappedBy="meta")
+     */
+    private $user;
+
+    /**
+     * @var int
+     * @ORM\Id
+     * @ORM\Column(name="id", type="int", nullable=false)
+     */
+    private $id;
 
     /**
      * @return \DateTime|null
@@ -22,24 +49,54 @@ class Meta
      */
     public function setCreated($created)
     {
-        Assertion::nullOrIsInstanceOf($created, \DateTime::class);
         $this->created = $created;
     }
 
     /**
-     * @return null|string
+     * @return \DateTime|null
      */
-    public function getLocation()
+    public function getLastModified()
     {
-        return $this->location;
+        return $this->lastModified;
     }
 
     /**
-     * @param string $location
+     * @param \DateTime|null $lastModified
      */
-    public function setLocation($location)
+    public function setLastModified($lastModified)
     {
-        Assertion::string($location);
-        $this->location = $location;
+        $this->lastModified = $lastModified;
+    }
+
+    /**
+     * @return User
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param User $user
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
     }
 }

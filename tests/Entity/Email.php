@@ -1,17 +1,49 @@
 <?php
 
-namespace WO2\API\Identity\Model\SCIM;
+namespace Webchain\ScimFilterToDqb\Tests\Entity;
 
-use Assert\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @ORM\Table(name="email")
+ *
+ * @ORM\Entity
+ */
 class Email
 {
-    private $value;
-    private $type;
-    private $primary;
-    
     /**
-     * @return string|null
+     * @var string
+     *
+     * @ORM\Column(name="value", type="string", nullable=false)
+     */
+    private $value;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="type", type="string", nullable=false)
+     */
+    private $type;
+    /**
+     * @var bool
+     *
+     * @ORM\Column(name="primary", type="boolean", nullable=false)
+     */
+    private $primary;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="User", inversedBy="emails")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
+     */
+    private $user;
+    /**
+     * @var int
+     * @ORM\Id
+     * @ORM\Column(name="id", type="int", nullable=false)
+     */
+    private $id;
+
+    /**
+     * @return string
      */
     public function getValue()
     {
@@ -23,12 +55,11 @@ class Email
      */
     public function setValue($value)
     {
-        Assertion::string($value);
         $this->value = $value;
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getType()
     {
@@ -40,12 +71,11 @@ class Email
      */
     public function setType($type)
     {
-        Assertion::string($type);
         $this->type = $type;
     }
 
     /**
-     * @return bool|null
+     * @return bool
      */
     public function isPrimary()
     {
@@ -57,7 +87,38 @@ class Email
      */
     public function setPrimary($primary)
     {
-        Assertion::boolean($primary);
         $this->primary = $primary;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param mixed $user
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
     }
 }

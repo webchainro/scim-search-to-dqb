@@ -1,28 +1,67 @@
 <?php
 
-namespace WO2\API\Identity\Model\SCIM;
+namespace Webchain\ScimFilterToDqb\Tests\Entity;
 
-use Assert\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @ORM\Table(name="user")
+ *
+ * @ORM\Entity
+ */
 class User
 {
-    const GENDER_FEMALE = 'female';
-    const GENDER_MALE = 'male';
-
+    /**
+     * @var Meta
+     *
+     * @ORM\OneToOne(targetEntity="Meta", inversedBy="cart")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false)
+     */
     private $meta;
+    /**
+     * @var Name
+     *
+     * @ORM\OneToOne(targetEntity="Name", inversedBy="user")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false)
+     */
     private $name;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="username", type="string", nullable=false)
+     */
     private $userName;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="title", type="string", nullable=false)
+     */
+    private $title;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="user_type", type="string", nullable=false)
+     */
+    private $userType;
+    /**
+     * @var Email[]
+     * @ORM\OneToMany(targetEntity="Email", mappedBy="user")
+     */
     private $emails = [];
-    private $addresses = [];
+    /**
+     * @var Email[]
+     * @ORM\OneToMany(targetEntity="PhoneNumber", mappedBy="user")
+     */
     private $phoneNumbers = [];
-    private $groups = [];
-    private $nifId;
+    /**
+     * @var int
+     * @ORM\Id
+     * @ORM\Column(name="id", type="int", nullable=false)
+     */
     private $id;
-    private $birthDate;
-    private $gender;
 
     /**
-     * @return Meta|null
+     * @return Meta
      */
     public function getMeta()
     {
@@ -32,13 +71,13 @@ class User
     /**
      * @param Meta $meta
      */
-    public function setMeta(Meta $meta)
+    public function setMeta($meta)
     {
         $this->meta = $meta;
     }
 
     /**
-     * @return FullName|null
+     * @return Name
      */
     public function getName()
     {
@@ -46,15 +85,15 @@ class User
     }
 
     /**
-     * @param FullName $name
+     * @param Name $name
      */
-    public function setName(FullName $name)
+    public function setName($name)
     {
         $this->name = $name;
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getUserName()
     {
@@ -62,45 +101,43 @@ class User
     }
 
     /**
-     * @param string|null $userName
+     * @param string $userName
      */
     public function setUserName($userName)
     {
-        Assertion::nullOrString($userName);
         $this->userName = $userName;
     }
 
     /**
-     * @param Address $address
+     * @return string
      */
-    public function addAddress(Address $address)
+    public function getTitle()
     {
-        $this->addresses[] = $address;
+        return $this->title;
     }
 
     /**
-     * @return Address[]
+     * @param string $title
      */
-    public function getAddresses()
+    public function setTitle($title)
     {
-        return $this->addresses;
+        $this->title = $title;
     }
 
     /**
-     * @param Address[] $addresses
+     * @return string
      */
-    public function setAddresses(array $addresses)
+    public function getUserType()
     {
-        Assertion::allIsInstanceOf($addresses, Address::class);
-        $this->addresses = $addresses;
+        return $this->userType;
     }
 
     /**
-     * @param Email $email
+     * @param string $userType
      */
-    public function addEmail(Email $email)
+    public function setUserType($userType)
     {
-        $this->emails[] = $email;
+        $this->userType = $userType;
     }
 
     /**
@@ -114,18 +151,9 @@ class User
     /**
      * @param Email[] $emails
      */
-    public function setEmails(array $emails)
+    public function setEmails($emails)
     {
-        Assertion::allIsInstanceOf($emails, Email::class);
         $this->emails = $emails;
-    }
-
-    /**
-     * @param PhoneNumber $phoneNumber
-     */
-    public function addPhoneNumber(PhoneNumber $phoneNumber)
-    {
-        $this->phoneNumbers[] = $phoneNumber;
     }
 
     /**
@@ -139,52 +167,9 @@ class User
     /**
      * @param PhoneNumber[] $phoneNumbers
      */
-    public function setPhoneNumbers(array $phoneNumbers)
+    public function setPhoneNumbers($phoneNumbers)
     {
-        Assertion::allIsInstanceOf($phoneNumbers, PhoneNumber::class);
         $this->phoneNumbers = $phoneNumbers;
-    }
-
-    /**
-     * @param Membership $group
-     */
-    public function addGroup(Membership $group)
-    {
-        $this->groups[] = $group;
-    }
-
-    /**
-     * @return Membership[]
-     */
-    public function getGroups()
-    {
-        return $this->groups;
-    }
-
-    /**
-     * @param Membership[] $groups
-     */
-    public function setGroups(array $groups)
-    {
-        Assertion::allIsInstanceOf($groups, Membership::class);
-        $this->groups = $groups;
-    }
-
-    /**
-     * @return int
-     */
-    public function getNifId()
-    {
-        return $this->nifId;
-    }
-
-    /**
-     * @param int|null $nifId
-     */
-    public function setNifId($nifId)
-    {
-        Assertion::nullOrInteger($nifId);
-        $this->nifId = $nifId;
     }
 
     /**
@@ -200,41 +185,6 @@ class User
      */
     public function setId($id)
     {
-        Assertion::greaterThan($id, 0);
         $this->id = $id;
-    }
-
-    /**
-     * @return \DateTime|null
-     */
-    public function getBirthDate()
-    {
-        return $this->birthDate;
-    }
-
-    /**
-     * @param \DateTime|null $birthDate
-     */
-    public function setBirthDate($birthDate)
-    {
-        Assertion::nullOrIsInstanceOf($birthDate, \DateTime::class);
-        $this->birthDate = $birthDate;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getGender()
-    {
-        return $this->gender;
-    }
-
-    /**
-     * @param string|null $gender
-     */
-    public function setGender($gender)
-    {
-        Assertion::nullOrChoice($gender, [self::GENDER_FEMALE, self::GENDER_MALE]);
-        $this->gender = $gender;
     }
 }
