@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eb4194db4cb2dfa4df5f8a52da55d0e0",
+    "content-hash": "f508d4918c3f093ecbe21008297c21ae",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -1110,16 +1110,16 @@
         },
         {
             "name": "tmilos/scim-filter-parser",
-            "version": "1.3.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/tmilos/scim-filter-parser.git",
-                "reference": "cfd9ba1f33e1e15adcab2481bffd74cb9fb35704"
+                "url": "https://github.com/webchainro/scim-filter-parser.git",
+                "reference": "706c2137e8545ae4cf1c47292cc1bf54c0be99f4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tmilos/scim-filter-parser/zipball/cfd9ba1f33e1e15adcab2481bffd74cb9fb35704",
-                "reference": "cfd9ba1f33e1e15adcab2481bffd74cb9fb35704",
+                "url": "https://api.github.com/repos/webchainro/scim-filter-parser/zipball/706c2137e8545ae4cf1c47292cc1bf54c0be99f4",
+                "reference": "706c2137e8545ae4cf1c47292cc1bf54c0be99f4",
                 "shasum": ""
             },
             "require": {
@@ -1137,7 +1137,6 @@
                     "Tests\\Tmilos\\ScimFilterParser\\": "tests/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1149,15 +1148,18 @@
             ],
             "description": "System for Cross-domain Identity Management SCIM AST filter parser PHP library",
             "keywords": [
+                "AST",
+                "SCIM",
                 "SCIM AST",
                 "SCIM filter parser",
                 "SCIM parser",
-                "ast",
                 "parser",
-                "scim",
                 "simplecloud"
             ],
-            "time": "2017-01-19T11:17:42+00:00"
+            "support": {
+                "source": "https://github.com/webchainro/scim-filter-parser/tree/1.3.1"
+            },
+            "time": "2019-02-05T19:19:37+00:00"
         },
         {
             "name": "tmilos/value",
@@ -2620,8 +2622,10 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
-    "stability-flags": [],
+    "minimum-stability": "dev",
+    "stability-flags": {
+        "tmilos/scim-filter-parser": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

@@ -16,8 +16,6 @@ use Tmilos\ScimFilterParser\Parser as StringParser;
 
 class Parser
 {
-    const PRIMARY_ENTITY_ALIAS = 'sftdp';
-    const JOINS_ALIAS_SUFFIX = 'sftdj';
     /** @var EntityManagerInterface */
     private $entityManager;
     /** @var StringParser */
@@ -26,19 +24,17 @@ class Parser
     private $primaryEntityClass;
     /** @var QueryBuilder */
     private $queryBuilder;
-    /** @var int  */
-    private $joinedMap = [];
-
-    private $primaryEntityMetadata;
+    /** @var Joiner  */
+    private $joiner;
 
     private $builderParameters = [];
 
-    public function __construct(EntityManagerInterface $entityManager, string $primaryEntityClass)
+    public function __construct(EntityManagerInterface $entityManager, string $primaryEntityClass, StringParser $stringParser = null)
     {
         $this->entityManager = $entityManager;
-        $this->stringParser = new StringParser();
+        $this->stringParser = $stringParser ?? new StringParser();
         $this->primaryEntityClass = $primaryEntityClass;
-        $this->primaryEntityMetadata = $entityManager->getMetadataFactory()->getMetadataFor($primaryEntityClass);
+        $this->joiner = new Joiner($this->entityManager, $primaryEntityClass);
     }
 
     /**
@@ -48,11 +44,12 @@ class Parser
     public function fromScimToQueryBuilder(string $filterString): QueryBuilder
     {
         $this->queryBuilder = $this->entityManager->createQueryBuilder();
+        $this->joiner->setQueryBuilder($this->queryBuilder);
         $node = $this->stringParser->parse($filterString);
 
         $this->queryBuilder
-            ->select(self::PRIMARY_ENTITY_ALIAS)
-            ->from($this->primaryEntityClass, self::PRIMARY_ENTITY_ALIAS);
+            ->select(Joiner::PRIMARY_ENTITY_ALIAS)
+            ->from($this->primaryEntityClass, Joiner::PRIMARY_ENTITY_ALIAS);
         $predicates = $this->buildPredicatesRecursively($node);
         $this->queryBuilder
             ->where($predicates)
@@ -61,26 +58,26 @@ class Parser
         return clone $this->queryBuilder;
     }
 
-    private function buildPredicatesRecursively(Node $node, $negation = false, $currentAlias = self::PRIMARY_ENTITY_ALIAS)
+    private function buildPredicatesRecursively(Node $node, $negation = false, $currentAlias = Joiner::PRIMARY_ENTITY_ALIAS, int $depth = 0)
     {
         if ($node instanceof Negation) {
-            return $this->buildPredicatesRecursively($node->getFilter(), true, $currentAlias);
+            return $this->buildPredicatesRecursively($node->getFilter(), true, $currentAlias, $depth + 1);
         }
 
         if($node instanceof Conjunction) {
-            return $this->fromConjunctionToComposite($node, $negation, $currentAlias);
+            return $this->fromConjunctionToComposite($node, $negation, $currentAlias, $depth);
         }
 
         if($node instanceof Disjunction) {
-            return $this->fromDisjunctionToComposite($node, $negation, $currentAlias);
+            return $this->fromDisjunctionToComposite($node, $negation, $currentAlias, $depth);
         }
 
         if ($node instanceof ValuePath) {
-            return $this->fromValuePathToCondition($node, $negation, $currentAlias);
+            return $this->fromValuePathToCondition($node, $negation, $currentAlias, $depth);
         }
 
         if ($node instanceof ComparisonExpression) {
-            return $this->fromComparisonExpressionToCondition($node, $negation, $currentAlias);
+            return $this->fromComparisonExpressionToCondition($node, $negation, $currentAlias, $depth);
         }
 
         throw new \InvalidArgumentException('Node type not recognized');
@@ -92,11 +89,11 @@ class Parser
      * @param $currentAlias
      * @return mixed
      */
-    private function fromConjunctionToComposite(Conjunction $conjunction, bool $negation, string $currentAlias): Composite
+    private function fromConjunctionToComposite(Conjunction $conjunction, bool $negation, string $currentAlias, int $depth): Composite
     {
         $arguments = [];
         foreach ($conjunction->getFactors() as $factor) {
-            $arguments[] = $this->buildPredicatesRecursively($factor, $negation, $currentAlias);
+            $arguments[] = $this->buildPredicatesRecursively($factor, $negation, $currentAlias, $depth + 1);
         }
 
         $methodName = 'andX';
@@ -112,11 +109,11 @@ class Parser
      * @param $negation
      * @param $currentAlias
      */
-    private function fromDisjunctionToComposite(Disjunction $disjunction, bool $negation, string $currentAlias): Composite
+    private function fromDisjunctionToComposite(Disjunction $disjunction, bool $negation, string $currentAlias, int $depth): Composite
     {
         $arguments = [];
         foreach ($disjunction->getTerms() as $term) {
-            $arguments[] = $this->buildPredicatesRecursively($term, $negation, $currentAlias);
+            $arguments[] = $this->buildPredicatesRecursively($term, $negation, $currentAlias, $depth + 1);
         }
 
         $methodName = 'orX';
@@ -132,40 +129,23 @@ class Parser
      * @param $negation
      * @param $currentAlias
      */
-    private function fromValuePathToCondition(ValuePath $node, bool $negation, string $currentAlias)
+    private function fromValuePathToCondition(ValuePath $node, bool $negation, string $currentAlias, int $depth)
     {
-        $array = $node->dump();
-        /** @var AttributePath $attributePath */
-        $attributePath = $array['ValuePath'][0]['AttributePath'];
+        $attributePath = $node->getAttributePath();
         $attributesCount = count($attributePath->attributeNames);
 
         if ($attributesCount === 1) {
-            $joining = $currentAlias . '.' . $attributePath->attributeNames[0];
-            if (!isset($this->joinedMap[$joining])) {
-                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
-                $this->queryBuilder->leftJoin($joining, $nextAlias);
-                $this->joinedMap[$joining] = $nextAlias;
-            } else {
-                $nextAlias = $this->joinedMap[$joining];
-            }
+            $nextAlias = $this->joiner->detectNextAlias($currentAlias, $attributePath->attributeNames[0], $depth);
 
-            return $this->buildPredicatesRecursively($array['ValuePath'][1], $negation, $nextAlias);
+            return $this->buildPredicatesRecursively($node->getFilter(), $negation, $nextAlias, $depth + 1);
         }
 
         foreach ($attributePath->attributeNames as $key => $attributeName) {
-            $joining = $currentAlias . '.' . $attributeName;
-            if (!isset($this->joined[$joining])) {
-                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
-                $this->queryBuilder->leftJoin($joining, $nextAlias);
-                $this->joined[$joining] = $nextAlias;
-            } else {
-                $nextAlias = $this->joined[$joining];
-            }
-
+            $nextAlias = $this->joiner->detectNextAlias($currentAlias, $attributeName, $depth);
             $currentAlias = $nextAlias;
         }
 
-        return $this->buildPredicatesRecursively($array['ValuePath'][1], $negation, $nextAlias);
+        return $this->buildPredicatesRecursively($node->getFilter(), $negation, $nextAlias, $depth + 1);
     }
 
     /**
@@ -173,11 +153,11 @@ class Parser
      * @param $negation
      * @param $currentAlias
      */
-    private function fromComparisonExpressionToCondition(ComparisonExpression $node, bool $negation, string $currentAlias)
+    private function fromComparisonExpressionToCondition(ComparisonExpression $node, bool $negation, string $currentAlias, int $depth)
     {
         $attributesCount = count($node->attributePath->attributeNames);
         if ($attributesCount === 1) {
-            return $this->buildDqlCondition($node, $currentAlias, $node->attributePath->attributeNames[0], $negation);
+            return $this->buildDqlCondition($node, $currentAlias, $node->attributePath->attributeNames[0], $negation, $depth);
         }
 
         $lastIndex = $attributesCount - 1;
@@ -186,38 +166,38 @@ class Parser
                 continue;
             }
 
-            $joining = $currentAlias . '.' . $attributeName;
-            if (!isset($this->joined[$joining])) {
-                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
-                $this->queryBuilder->leftJoin($joining, $nextAlias);
-                $this->joined[$joining] = $nextAlias;
-            } else {
-                $nextAlias = $this->joined[$joining];
-            }
+            $nextAlias = $this->joiner->detectNextAlias($currentAlias, $attributeName, $depth);
 
             $currentAlias = $nextAlias;
         }
 
         $columnName = $node->attributePath->attributeNames[$lastIndex];
 
-        return $this->buildDqlCondition($node, $currentAlias, $columnName, $negation);
+        return $this->buildDqlCondition($node, $currentAlias, $columnName, $negation, $depth);
     }
 
-    private function buildDqlCondition(ComparisonExpression $comparisonExpression, string $alias, string $columnsName, bool $negation)
+    private function buildDqlCondition(ComparisonExpression $comparisonExpression, string $alias, string $columnsName, bool $negation, int $depth)
     {
         $condition = null;
         $nextParameterIndex = count($this->builderParameters) + 1;
         $compareValue = $comparisonExpression->compareValue;
 
-        if ($alias === self::PRIMARY_ENTITY_ALIAS && $this->primaryEntityMetadata->isCollectionValuedAssociation($columnsName)) {
-            $joining = $alias . '.' . $columnsName;
-            if (!isset($this->joined[$joining])) {
-                $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->joining);
-                $this->queryBuilder->leftJoin($joining, $nextAlias);
-                $this->joined[$joining] = $nextAlias;
-            } else {
-                $nextAlias = $this->joined[$joining];
-            }
+        $classMetadata = $this->joiner->getJoinByAlias($alias)->getClassMetadata();
+        if ($classMetadata->isCollectionValuedAssociation($columnsName)) {
+            $nextAlias = $this->joiner->detectNextAlias($alias, $columnsName, $depth);
+            $attributePath = new AttributePath();
+            /**
+             * If the specified attribute in a filter expression is a multi-valued
+             * attribute, the filter matches if any of the values of the specified
+             * attribute match the specified criterion; e.g., if a User has multiple
+             * "emails" values, only one has to match for the entire User to match.
+             * For complex attributes, a fully qualified sub-attribute MUST be
+             * specified using standard attribute notation, see https://tools.ietf.org/html/rfc7644#page-22
+             */
+            $attributePath->add('value');
+            $newExpression = new ComparisonExpression($attributePath, $comparisonExpression->operator, $compareValue);
+
+            return $this->buildDqlCondition($newExpression, $nextAlias, 'value', $negation, $depth + 1);
         }
 
         $x = $alias . '.' . $columnsName;

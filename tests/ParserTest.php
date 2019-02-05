@@ -2,8 +2,8 @@
 
 namespace Webchain\ScimFilterToDqb\Tests;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Tools\Setup;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +22,7 @@ class ParserTest extends TestCase
     {
         $parser = new Parser($this->getEntityManager(), User::class);
         $qb = $parser->fromScimToQueryBuilder($filterString);
-        $this->assertEquals($expectedDql, $qb->getQuery()->getDQL());
+        $this->assertEquals(trim(preg_replace('/\s\s+/', ' ', $expectedDql)), $qb->getQuery()->getDQL());
         $parametersArray = $qb->getParameters()->toArray();
         $resultParametersArray = [];
         /** @var Parameter $parameter */
@@ -32,116 +32,198 @@ class ParserTest extends TestCase
         $this->assertEquals($expectedParametersArray, $resultParametersArray);
     }
 
-    public function parserHappyDataProvider()
+    public function parserHappyDataProvider(): array
     {
         return [
-//            [
-//                'userName eq "bjensen"',
-//                "SELECT " . Parser::PRIMARY_ENTITY_ALIAS . " FROM " . User::class . " " . Parser::PRIMARY_ENTITY_ALIAS . " WHERE " . Parser::PRIMARY_ENTITY_ALIAS . ".userName = ?1",
-//                [1 => "bjensen"]
-//            ],
-//
-//            [
-//                'name.familyName co "O\'Malley"',
-//                "SELECT " . Parser::PRIMARY_ENTITY_ALIAS . " FROM " . User::class . " " . Parser::PRIMARY_ENTITY_ALIAS . " LEFT JOIN " . Parser::PRIMARY_ENTITY_ALIAS . ".name " . Parser::JOINS_ALIAS_SUFFIX . "0 WHERE " . Parser::JOINS_ALIAS_SUFFIX . "0.familyName LIKE '%O''Malley%'",
-//                []
-//            ],
-//
-//            [
-//                'userName sw "J"',
-//                "SELECT " . Parser::PRIMARY_ENTITY_ALIAS . " FROM " . User::class . " " . Parser::PRIMARY_ENTITY_ALIAS . " WHERE " . Parser::PRIMARY_ENTITY_ALIAS . ".userName LIKE 'J%'",
-//                []
-//            ],
-//            [
-//                'title pr',
-//                "SELECT " . Parser::PRIMARY_ENTITY_ALIAS . " FROM Webchain\ScimFilterToDqb\Tests\Entity\User " . Parser::PRIMARY_ENTITY_ALIAS . " WHERE " . Parser::PRIMARY_ENTITY_ALIAS . ".title IS NOT NULL",
-//                []
-//            ],
-//
-//            [
-//                'meta.lastModified gt "2019-01-28T04:42:34Z"',
-//                "SELECT sftdp FROM Webchain\ScimFilterToDqb\Tests\Entity\User sftdp LEFT JOIN sftdp.meta sftdj0 WHERE sftdj0.lastModified > ?1",
-//                [1 => new \DateTime('2019-01-28T04:42:34Z')]
-//            ],
-//            [
-//                'title pr and userType eq "Employee"',
-//                "SELECT sftdp FROM Webchain\ScimFilterToDqb\Tests\Entity\User sftdp WHERE sftdp.title IS NOT NULL AND sftdp.userType = ?1",
-//                [1 => 'Employee']
-//            ],
-//
-//            [
-//                'title pr or userType eq "Intern"',
-//                "SELECT sftdp FROM Webchain\ScimFilterToDqb\Tests\Entity\User sftdp WHERE sftdp.title IS NOT NULL OR sftdp.userType = ?1",
-//                [1 => 'Intern']
-//            ],
-//            [
-//                'userType eq "Employee" and (emails co "example.com" or emails.value co "example.org")',
-//                "SELECT sftdp FROM Webchain\ScimFilterToDqb\Tests\Entity\User sftdp LEFT JOIN sftdp.emails sftdj0 WHERE sftdp.userType = ?1 AND (sftdp.emails LIKE '%example.com%' OR sftdj0.value LIKE '%example.org%')",
-//                []
-//            ],
             [
-                'userType ne "Employee" and not (emails co "example.com" or emails.value co "example.org")',
-                "SELECT sftdp FROM Webchain\ScimFilterToDqb\Tests\Entity\User sftdp LEFT JOIN sftdp.emails sftdj0 WHERE sftdp.userType <> ?1 AND (sftdp.emails NOT LIKE '%example.com%' AND sftdj0.value NOT LIKE '%example.org%')",
+                'userName eq "bjensen"',
+                "
+                 SELECT 
+                    sftdp 
+                 FROM 
+                    " . User::class . " sftdp 
+                 WHERE 
+                    sftdp.userName = ?1",
+
+                [1 => "bjensen"]
+            ],
+
+            [
+                'name.familyName co "O\'Malley"',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.name sftdj1 
+                WHERE 
+                    sftdj1.familyName LIKE '%O''Malley%'",
+                []
+            ],
+
+            [
+                'userName sw "J"',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                WHERE 
+                    sftdp.userName LIKE 'J%'",
+                []
+            ],
+            [
+                'title pr',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                WHERE 
+                    sftdp.title IS NOT NULL",
+                []
+            ],
+
+            [
+                'meta.lastModified gt "2019-01-28T04:42:34Z"',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.meta sftdj1 
+                WHERE 
+                    sftdj1.lastModified > ?1",
+                [1 => new \DateTime('2019-01-28T04:42:34Z')]
+            ],
+            [
+                'title pr and userType eq "Employee"',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                WHERE 
+                    sftdp.title IS NOT NULL 
+                AND 
+                    sftdp.userType = ?1",
                 [1 => 'Employee']
             ],
-//            [
-//                'userType eq "Employee" and (emails.type eq "work")',
-//                "",
-//                []
-//            ],
-//            [
-//                'emails[type eq "work"]',
-//                "",
-//                []
-//            ],
-//            [
-//                'userType eq "Employee" and emails[type eq "work" and value co "@example.com"]',
-//                "",
-//                []
-//            ],
-//
-//            [
-//                'emails[type eq "work" and value co "@example.com"] or phoneNumbers[value co "111" and type eq "work"]',
-//                "",
-//                []
-//            ],
-//
-//            [
-//                'userName eq "john" and name sw "mike"',
-//                "",
-//                []
-//            ],
-//
-//            [
-//                'userName eq "john" or name sw "mike"',
-//                "",
-//                []
-//            ],
-//
-//            [
-//                'userName eq "john" or name sw "mike" and id ew "123"',
-//                "",
-//                []
-//            ],
-//
-//            [
-//                'userName eq "john" and (name sw "mike" or id ew "123")',
-//                "",
-//                []
-//            ],
-//
-//            [
-//                'userName eq "john" and not (name sw "mike" or id ew "123")',
-//                "",
-//                []
-//            ],
+
+            [
+                'title pr or userType eq "Intern"',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                WHERE 
+                    sftdp.title IS NOT NULL 
+                OR 
+                    sftdp.userType = ?1",
+                [1 => 'Intern']
+            ],
+            [
+                'userType eq "Employee" and (emails co "example.com" or emails.value co "example.org")',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.emails sftdj1 
+                WHERE 
+                    sftdp.userType = ?1 
+                AND (
+                    sftdj1.value LIKE '%example.com%' OR sftdj1.value LIKE '%example.org%')",
+                [1 => 'Employee']
+            ],
+            [
+                'userType ne "Employee" and not (emails co "example.com" or emails.value co "example.org")',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.emails sftdj1 
+                WHERE 
+                    sftdp.userType <> ?1 
+                AND (
+                    sftdj1.value NOT LIKE '%example.com%' 
+                    AND 
+                    sftdj1.value NOT LIKE '%example.org%'
+                )",
+                [1 => 'Employee']
+            ],
+            [
+                'userType eq "Employee" and (emails.type eq "work")',
+                "SELECT 
+                    sftdp 
+                FROM 
+                    " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.emails sftdj1 
+                WHERE 
+                    sftdp.userType = ?1 
+                AND 
+                    sftdj1.type = ?2",
+                [1 => 'Employee', 2 => 'work']
+            ],
+            [
+                'emails[type eq "work"]',
+                "SELECT 
+                  sftdp 
+                FROM 
+                  " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.emails sftdj1 
+                WHERE 
+                    sftdj1.type = ?1",
+                [1 => 'work']
+            ],
+            [
+                'userType eq "Employee" and emails[type eq "work" and value co "@example.com"]',
+                "SELECT 
+                  sftdp 
+                FROM 
+                  " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.emails sftdj1 
+                WHERE 
+                    sftdp.userType = ?1 
+                AND (
+                    sftdj1.type = ?2 
+                    AND 
+                    sftdj1.value LIKE '%@example.com%'
+                )",
+                [1 => 'Employee', 2 => "work"]
+            ],
+            [
+                'emails[type eq "work" and value co "@example.com"] or ims[type eq "xmpp" and value co "@foo.com"]',
+                "SELECT 
+                  sftdp 
+                FROM 
+                  " . User::class . " sftdp 
+                LEFT JOIN 
+                    sftdp.emails sftdj1 
+                LEFT JOIN 
+                    sftdp.ims sftdj2 
+                WHERE (
+                    sftdj1.type = ?1 
+                    AND 
+                    sftdj1.value LIKE '%@example.com%'
+                ) 
+                OR 
+                (
+                    sftdj2.type = ?2 
+                    AND 
+                    sftdj2.value LIKE '%@foo.com%'
+                )",
+                [1 => 'work', 2 => 'xmpp']
+            ],
         ];
     }
 
     /**
-     * @return EntityManager
+     * @return EntityManagerInterface
+     * @throws \Doctrine\ORM\ORMException
      */
-    private function getEntityManager()
+    private function getEntityManager(): EntityManagerInterface
     {
         if (null === $this->em) {
             $this->em = $this->buildEntityManager();
@@ -150,7 +232,11 @@ class ParserTest extends TestCase
         return $this->em;
     }
 
-    private function buildEntityManager()
+    /**
+     * @return EntityManager
+     * @throws \Doctrine\ORM\ORMException
+     */
+    private function buildEntityManager(): EntityManagerInterface
     {
         $paths = array(realpath(__DIR__ . '/Entity'));
 
@@ -163,18 +249,5 @@ class ParserTest extends TestCase
 
         return EntityManager::create($dbParams, $config);
     }
-
-    public function error_provider_v2()
-    {
-        return [
-            ['none a valid filter', "[Syntax Error] line 0, col 5: Error: Expected comparision operator, got 'a'"],
-            ['username xx "mike"', "[Syntax Error] line 0, col 9: Error: Expected comparision operator, got 'xx'"],
-            ['username eq', "[Syntax Error] line 0, col 9: Error: Expected SP, got end of string."],
-            ['username eq ', "[Syntax Error] line 0, col 11: Error: Expected comparison value, got end of string."],
-            ['emails[type[value eq "1"]]', "[Syntax Error] line 0, col 11: Error: Expected SP, got '['"],
-            ['members.value', '[Syntax Error] line 0, col 8: Error: Expected SP, got end of string.'],
-        ];
-    }
-
 
 }

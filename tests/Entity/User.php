@@ -49,10 +49,15 @@ class User
      */
     private $emails = [];
     /**
-     * @var Email[]
+     * @var PhoneNumber[]
      * @ORM\OneToMany(targetEntity="PhoneNumber", mappedBy="user")
      */
     private $phoneNumbers = [];
+    /**
+     * @var InstantMessaging[]
+     * @ORM\OneToMany(targetEntity="InstantMessaging", mappedBy="user")
+     */
+    private $ims = [];
     /**
      * @var int
      * @ORM\Id
@@ -170,6 +175,22 @@ class User
     public function setPhoneNumbers($phoneNumbers)
     {
         $this->phoneNumbers = $phoneNumbers;
+    }
+
+    /**
+     * @return InstantMessaging[]
+     */
+    public function getIms(): array
+    {
+        return $this->ims;
+    }
+
+    /**
+     * @param InstantMessaging[] $ims
+     */
+    public function setIms(array $ims): void
+    {
+        $this->ims = $ims;
     }
 
     /**
