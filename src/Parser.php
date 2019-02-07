@@ -13,6 +13,7 @@ use Tmilos\ScimFilterParser\Ast\Negation;
 use Tmilos\ScimFilterParser\Ast\Node;
 use Tmilos\ScimFilterParser\Ast\ValuePath;
 use Tmilos\ScimFilterParser\Parser as StringParser;
+use Webchain\ScimFilterToDqb\ValueObject\AttributeOperator;
 
 class Parser
 {
@@ -205,7 +206,7 @@ class Parser
         $expression = $this->queryBuilder->expr();
 
         switch ($comparisonExpression->operator) {
-            case 'eq':
+            case AttributeOperator::EQUAL:
                 if ($negation) {
                     $condition = $expression->neq($x, "?$nextParameterIndex");
                 } else {
@@ -214,7 +215,7 @@ class Parser
 
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
-            case 'ne':
+            case AttributeOperator::NOT_EQUAL:
                 if ($negation) {
                     $condition = $expression->eq($x, "?$nextParameterIndex");
                 } else {
@@ -223,28 +224,28 @@ class Parser
 
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
-            case 'co':
+            case AttributeOperator::CONSTAINS:
                 if ($negation) {
                     $condition = $expression->notLike($x, $expression->literal('%' . $compareValue .'%'));
                 } else {
                     $condition = $expression->like($x, $expression->literal('%' . $compareValue .'%'));
                 }
                 break;
-            case 'sw':
+            case AttributeOperator::STARTS_WITH:
                 if ($negation) {
                     $condition = $expression->notLike($x, $expression->literal($compareValue .'%'));
                 } else {
                     $condition = $expression->like($x, $expression->literal($compareValue .'%'));
                 }
                 break;
-            case 'pr':
+            case AttributeOperator::PRESENT:
                 if ($negation) {
                     $condition = $expression->isNull($x);
                 } else {
                     $condition = $expression->isNotNull($x);
                 }
                 break;
-            case 'gt':
+            case AttributeOperator::GREATER_THAN:
                 if ($negation) {
                     $condition = $expression->lte($x, "?$nextParameterIndex");
                 } else {
@@ -252,7 +253,7 @@ class Parser
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
-            case 'ge':
+            case AttributeOperator::GREATER_THAN_OR_EQUAL:
                 if ($negation) {
                     $condition = $expression->lt($x, "?$nextParameterIndex");
                 } else {
@@ -260,7 +261,7 @@ class Parser
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
-            case 'lt':
+            case AttributeOperator::LESS_THAN:
                 if ($negation) {
                     $condition = $expression->gte($x, "?$nextParameterIndex");
                 } else {
@@ -268,7 +269,7 @@ class Parser
                 }
                 $this->builderParameters[$nextParameterIndex] = $compareValue;
                 break;
-            case 'le':
+            case AttributeOperator::LESS_THAN_OR_EQUAL:
                 if ($negation) {
                     $condition = $expression->gt($x, "?$nextParameterIndex");
                 } else {
