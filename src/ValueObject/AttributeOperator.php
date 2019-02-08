@@ -2,6 +2,8 @@
 
 namespace Webchain\ScimFilterToDqb\ValueObject;
 
+use Assert\Assertion;
+
 /**
  * @see https://tools.ietf.org/html/rfc7644#section-3.4.2.2
  *
@@ -26,9 +28,7 @@ class AttributeOperator
 
     public function __construct(string $operator)
     {
-        if (!in_array($operator, $this->getAvailableOperators())) {
-            throw new \InvalidArgumentException('Operator is not a SCIM attribute operator');
-        }
+        Assertion::choice($operator, $this->getAvailableOperators(), 'Operator is not a SCIM attribute operator');
 
         $this->operator = $operator;
     }

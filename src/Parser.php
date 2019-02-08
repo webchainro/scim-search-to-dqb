@@ -3,6 +3,7 @@
 namespace Webchain\ScimFilterToDqb;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Composite;
 use Doctrine\ORM\QueryBuilder;
 use Tmilos\ScimFilterParser\Ast\AttributePath;
@@ -13,6 +14,7 @@ use Tmilos\ScimFilterParser\Ast\Negation;
 use Tmilos\ScimFilterParser\Ast\Node;
 use Tmilos\ScimFilterParser\Ast\ValuePath;
 use Tmilos\ScimFilterParser\Parser as StringParser;
+use Webchain\ScimFilterToDqb\Model\SearchRequest;
 use Webchain\ScimFilterToDqb\ValueObject\AttributeOperator;
 
 class Parser
@@ -38,6 +40,25 @@ class Parser
         $this->joiner = new Joiner($this->entityManager, $primaryEntityClass);
     }
 
+    public function createQuery(SearchRequest $searchRequest): Query
+    {
+        $this->queryBuilder = $this->entityManager->createQueryBuilder();
+        $this->joiner->setQueryBuilder($this->queryBuilder);
+        $this->queryBuilder
+            ->from($this->primaryEntityClass, Joiner::PRIMARY_ENTITY_ALIAS);
+
+        if ($searchRequest->hasFilter()) {
+            $node = $this->stringParser->parse($searchRequest->getFilter());
+            $predicates = $this->buildPredicatesRecursively($node);
+            $this->queryBuilder
+                ->where($predicates)
+                ->setParameters($this->builderParameters);
+        }
+
+        $select = SelectBuilder::buildString($searchRequest, $this->joiner);
+        $this->queryBuilder->select($select);
+    }
+
     /**
      * @param string $filterString See https://ldapwiki.com/wiki/SCIM%20Filtering
      * @return QueryBuilder
@@ -46,11 +67,11 @@ class Parser
     {
         $this->queryBuilder = $this->entityManager->createQueryBuilder();
         $this->joiner->setQueryBuilder($this->queryBuilder);
-        $node = $this->stringParser->parse($filterString);
-
         $this->queryBuilder
             ->select(Joiner::PRIMARY_ENTITY_ALIAS)
             ->from($this->primaryEntityClass, Joiner::PRIMARY_ENTITY_ALIAS);
+
+        $node = $this->stringParser->parse($filterString);
         $predicates = $this->buildPredicatesRecursively($node);
         $this->queryBuilder
             ->where($predicates)

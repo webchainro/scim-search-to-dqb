@@ -4,7 +4,7 @@ namespace Webchain\ScimFilterToDqb;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use Webchain\ScimFilterToDqb\ValueObject\Join;
+use Webchain\ScimFilterToDqb\Model\Join;
 
 class Joiner
 {
@@ -24,7 +24,6 @@ class Joiner
         $this->entityManager = $entityManager;
         $join = new Join(
             self::PRIMARY_ENTITY_ALIAS,
-            self::PRIMARY_ENTITY_ALIAS,
             $entityManager->getMetadataFactory()->getMetadataFor($primaryEntityClass)
         );
 
@@ -39,16 +38,24 @@ class Joiner
             return $this->mapByDepth[$id]->getAlias();
         }
 
+        $currentJoin = $this->mapByAlias[$currentAlias];
+
         $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->mapByDepth);
-        $classMetadata = $this->mapByAlias[$currentAlias]->getClassMetadata();
+        $classMetadata = $currentJoin->getClassMetadata();
         $this->queryBuilder->leftJoin($currentAlias . '.' . $columnName, $nextAlias);
         $targetEntity = $classMetadata->getAssociationTargetClass($columnName);
         $targetClassMetadata = $this->entityManager->getMetadataFactory()->getMetadataFor($targetEntity);
-        $join = new Join($id, $nextAlias, $targetClassMetadata);
+        $join = new Join($nextAlias, $targetClassMetadata);
         $this->mapByDepth[$id] = $join;
         $this->mapByAlias[$nextAlias] = $join;
+        $currentJoin->joinWith($columnName, $join);
 
         return $nextAlias;
+    }
+
+    public function hasAliasJoined(string $alias): bool
+    {
+        return isset($this->mapByAlias[$alias]);
     }
 
     public function getJoinByAlias(string $alias): Join
