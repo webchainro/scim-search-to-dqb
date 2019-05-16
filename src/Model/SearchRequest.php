@@ -16,10 +16,6 @@ class SearchRequest
     const SORT_ASCENDING = 'ascending';
     const SORT_DESCENDING = 'descending';
 
-    /** @var AttributePath[]|null */
-    private $attributes;
-    /** @var array|null */
-    private $excludedAttributes;
     /** @var string|null */
     private $filter;
     /** @var AttributePath|null */
@@ -151,16 +147,6 @@ class SearchRequest
         $this->sortOrder = $sortOrder;
     }
 
-    public function hasAttributes(): bool
-    {
-        return isset($this->attributes);
-    }
-
-    public function hasExcludedAttributes(): bool
-    {
-        return isset($this->excludedAttributes);
-    }
-
     public function hasFilter(): bool
     {
         return isset($this->filter);
@@ -184,25 +170,5 @@ class SearchRequest
     private static function endsWith(string $haystack, string $needle): bool
     {
         return $needle === substr($haystack, -strlen($needle));
-    }
-
-    /**
-     * @param string|array $attributes
-     * @return AttributePath[]
-     */
-    private static function buildAttributePathList($attributes): array
-    {
-        if (is_string($attributes)) {
-            $attributes = explode(',', $attributes);
-        }
-
-        $attributes = array_map(function ($attribute) {
-            if (is_string($attribute)) {
-                return AttributePath::fromString(trim($attribute));
-            }
-
-            return $attribute;
-        }, $attributes);
-        return $attributes;
     }
 }
