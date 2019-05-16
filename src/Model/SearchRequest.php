@@ -52,16 +52,6 @@ class SearchRequest
     public static function fromArray(array $parameters = []): SearchRequest
     {
         $searchRequest = new static();
-        if (isset($parameters['attributes'])) {
-            $attributes = $parameters['attributes'];
-            $attributes = self::buildAttributePathList($attributes);
-            $searchRequest->setAttributes($attributes);
-        }
-        if (isset($parameters['excludedAttributes'])) {
-            $excludedAttributes = $parameters['excludedAttributes'];
-            $excludedAttributes = self::buildAttributePathList($excludedAttributes);
-            $searchRequest->setExcludedAttributes($excludedAttributes);
-        }
         if (isset($parameters['filter'])) {
             $searchRequest->setFilter($parameters['filter']);
         }
@@ -129,40 +119,6 @@ class SearchRequest
     }
 
     /**
-     * @return null|AttributePath[]
-     */
-    public function getAttributes(): ?array
-    {
-        return $this->attributes;
-    }
-
-    /**
-     * @param AttributePath[] $attributes
-     */
-    public function setAttributes(array $attributes): void
-    {
-        Assertion::allIsInstanceOf($attributes, AttributePath::class);
-        $this->attributes = $attributes;
-    }
-
-    /**
-     * @return AttributePath[]|null
-     */
-    public function getExcludedAttributes(): ?array
-    {
-        return $this->excludedAttributes;
-    }
-
-    /**
-     * @param AttributePath[] $excludedAttributes
-     */
-    public function setExcludedAttributes(array $excludedAttributes): void
-    {
-        Assertion::allIsInstanceOf($excludedAttributes, AttributePath::class);
-        $this->excludedAttributes = $excludedAttributes;
-    }
-
-    /**
      * @return null|AttributePath
      */
     public function getSortBy(): ?AttributePath
@@ -179,11 +135,11 @@ class SearchRequest
     }
 
     /**
-     * @return null|string
+     * @return string
      */
     public function getSortOrder(): ?string
     {
-        return $this->sortOrder;
+        return $this->sortOrder ?? self::SORT_ASCENDING;
     }
 
     /**
@@ -213,11 +169,6 @@ class SearchRequest
     public function hasSortBy(): bool
     {
         return isset($this->sortBy);
-    }
-
-    public function hasSortOrder(): bool
-    {
-        return isset($this->sortOrder);
     }
 
     public function hasStartIndex(): bool

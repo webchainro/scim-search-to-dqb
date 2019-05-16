@@ -30,6 +30,12 @@ class Meta
     private $user;
 
     /**
+     * @var Group
+     * @ORM\OneToOne(targetEntity="Group", mappedBy="meta")
+     */
+    private $group;
+
+    /**
      * @var int
      * @ORM\Id
      * @ORM\Column(name="id", type="int", nullable=false)
@@ -82,6 +88,22 @@ class Meta
     public function setUser($user)
     {
         $this->user = $user;
+    }
+
+    /**
+     * @return Group
+     */
+    public function getGroup(): Group
+    {
+        return $this->group;
+    }
+
+    /**
+     * @param Group $group
+     */
+    public function setGroup(Group $group): void
+    {
+        $this->group = $group;
     }
 
     /**

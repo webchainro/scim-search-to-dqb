@@ -40,6 +40,10 @@ class Joiner
 
         $currentJoin = $this->mapByAlias[$currentAlias];
 
+        if ($currentJoin->hasColumnJoined($columnName)) {
+            return $currentJoin->getJoinedWithByColumn($columnName)->getAlias();
+        }
+
         $nextAlias = self::JOINS_ALIAS_SUFFIX . count($this->mapByDepth);
         $classMetadata = $currentJoin->getClassMetadata();
         $this->queryBuilder->leftJoin($currentAlias . '.' . $columnName, $nextAlias);
