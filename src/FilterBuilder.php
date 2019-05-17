@@ -36,7 +36,7 @@ class FilterBuilder
             ->setParameters($this->parameters);
     }
 
-    public function buildPredicatesRecursively(Node $node, $negation = false, $currentAlias = Joiner::PRIMARY_ENTITY_ALIAS, int $depth = 0)
+    private function buildPredicatesRecursively(Node $node, $negation = false, $currentAlias = Joiner::PRIMARY_ENTITY_ALIAS, int $depth = 0)
     {
         if ($node instanceof Negation) {
             return $this->buildPredicatesRecursively($node->getFilter(), true, $currentAlias, $depth + 1);
