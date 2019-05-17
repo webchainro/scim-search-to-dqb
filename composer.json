@@ -29,8 +29,7 @@
     "require": {
         "doctrine/orm": "*",
         "tmilos/scim-filter-parser": "dev-master",
-        "psr/http-message": "^1.0@dev",
-        "beberlei/assert": "dev-master"
+        "psr/http-message": "^1.0@dev"
     },
     "require-dev": {
         "phpunit/phpunit": "^7"

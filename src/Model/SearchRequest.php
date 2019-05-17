@@ -2,7 +2,6 @@
 
 namespace Webchain\ScimFilterToDqb\Model;
 
-use Assert\Assertion;
 use Psr\Http\Message\ServerRequestInterface;
 use Tmilos\ScimFilterParser\Ast\AttributePath;
 
@@ -143,7 +142,9 @@ class SearchRequest
      */
     public function setSortOrder(string $sortOrder): void
     {
-        Assertion::choice($sortOrder, [self::SORT_ASCENDING, self::SORT_DESCENDING], "Sort order $sortOrder not supported");
+        if (!in_array($sortOrder, [self::SORT_ASCENDING, self::SORT_DESCENDING])) {
+            throw new \InvalidArgumentException("Sort order $sortOrder not supported");
+        }
         $this->sortOrder = $sortOrder;
     }
 
