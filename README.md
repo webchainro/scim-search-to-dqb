@@ -1,12 +1,12 @@
-# SCIM filter parser to QB (Doctrine Query Builder)
+# SCIM search to DQB (Doctrine Query Builder)
 
-Transforms a SCIM string filter into a Doctrine Query Builder. SCIM stands for System for Cross-domain Identity Management and more details about filtering can be found at https://tools.ietf.org/html/rfc7644#section-3.4.2.2 .
-
+Transforms a SCIM search parameters into a Doctrine Query Builder. SCIM stands for System for Cross-domain Identity Management and more details about search can be found at https://tools.ietf.org/html/rfc7644#section-3.4.3 .
+Be aware, it does not support `attributes` and `excludedAttributes`, they are ignored. The reason behind this is that Doctrine does not handle quite well partial objects.
 # Usage
 
 
 ```
-// Route would look something like `/v1/Users?filter=userType eq "Employee" and (emails.type eq "work")`
+// Route would look something like `/v1/Users?filter=userType eq "Employee" and (emails.type eq "work")&sortBy=userType&sortOrder=descending&startIndex=21&count=10`
 
 $parser = new Parser($this->getEntityManager(), User::class);
 $qb = $parser->fromScimToQueryBuilder($filterString);
@@ -14,7 +14,7 @@ $qb = $parser->fromScimToQueryBuilder($filterString);
 
 $qb->getQuery()->getDQL();
 // Should give you: 
-// SELECT sftdp FROM User sftdp LEFT JOIN sftdp.emails sftdj1 WHERE sftdp.userType = ?1 AND sftdj1.type = ?2
+// SELECT sftdp FROM User sftdp LEFT JOIN sftdp.emails sftdj1 WHERE sftdp.userType = ?1 AND sftdj1.type = ?2 ORDER BY sftdj1.type DESC
 
 
 $qb->getParameters();
@@ -31,6 +31,9 @@ result = {Doctrine\Common\Collections\ArrayCollection} [1]
    value = "work"
    type = 2
 /*
+
+$qb->getFirstResult(); // Should give you: 20
+$qb->getMaxResults(); // Should give you: 10
 ```
 
 For more details look at the [unit tests](tests/ParserTest.php)

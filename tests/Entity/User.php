@@ -14,7 +14,7 @@ class User
     /**
      * @var Meta
      *
-     * @ORM\OneToOne(targetEntity="Meta", inversedBy="cart")
+     * @ORM\OneToOne(targetEntity="Meta", inversedBy="user")
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false)
      */
     private $meta;
@@ -58,6 +58,13 @@ class User
      * @ORM\OneToMany(targetEntity="InstantMessaging", mappedBy="user")
      */
     private $ims = [];
+
+    /**
+     * @var Group
+     * @ORM\OneToOne(targetEntity="Group", mappedBy="user")
+     */
+    private $group;
+
     /**
      * @var int
      * @ORM\Id
@@ -191,6 +198,22 @@ class User
     public function setIms(array $ims): void
     {
         $this->ims = $ims;
+    }
+
+    /**
+     * @return Group
+     */
+    public function getGroup(): Group
+    {
+        return $this->group;
+    }
+
+    /**
+     * @param Group $group
+     */
+    public function setGroup(Group $group): void
+    {
+        $this->group = $group;
     }
 
     /**
