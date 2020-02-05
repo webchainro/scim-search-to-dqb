@@ -1164,12 +1164,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/webchainro/scim-filter-parser.git",
-                "reference": "706c2137e8545ae4cf1c47292cc1bf54c0be99f4"
+                "reference": "9bf6751e4ed0566884929f49dfa924062435aae3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webchainro/scim-filter-parser/zipball/706c2137e8545ae4cf1c47292cc1bf54c0be99f4",
-                "reference": "706c2137e8545ae4cf1c47292cc1bf54c0be99f4",
+                "url": "https://api.github.com/repos/webchainro/scim-filter-parser/zipball/9bf6751e4ed0566884929f49dfa924062435aae3",
+                "reference": "9bf6751e4ed0566884929f49dfa924062435aae3",
                 "shasum": ""
             },
             "require": {
@@ -1207,9 +1207,9 @@
                 "simplecloud"
             ],
             "support": {
-                "source": "https://github.com/webchainro/scim-filter-parser/tree/1.3.1"
+                "source": "https://github.com/webchainro/scim-filter-parser/tree/master"
             },
-            "time": "2019-02-05T19:19:37+00:00"
+            "time": "2020-02-05T08:50:33+00:00"
         },
         {
             "name": "tmilos/value",
