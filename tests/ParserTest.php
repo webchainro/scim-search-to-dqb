@@ -222,7 +222,17 @@ class ParserTest extends TestCase
                 'group.meta.lastModified gt "2019-01-28T04:42:34Z" and group.meta.created gt "2019-01-28T04:42:34Z"',
                 "SELECT sftdp FROM " . User::class . " sftdp LEFT JOIN sftdp.group sftdj1 LEFT JOIN sftdj1.meta sftdj2 WHERE sftdj2.lastModified > ?1 AND sftdj2.created > ?2",
                 [1 => new \DateTime('2019-01-28T04:42:34Z'), 2 => new \DateTime('2019-01-28T04:42:34Z')]
-            ]
+            ],
+            [
+                'userType eq "Employee" and emails.type eq "work" and emails.value co "@example.com"',
+                "SELECT sftdp FROM " . User::class . " sftdp LEFT JOIN sftdp.emails sftdj1 WHERE sftdp.userType = ?1 AND sftdj1.type = ?2 AND sftdj1.value LIKE '%@example.com%'",
+                [1 => 'Employee', 2 => 'work']
+            ],
+            [
+                'emails.value co "@example.com" and (id eq "25769c6c-d34d-4bfe-ba98-e0ee856f3e7a" or id eq "25769c6c-d34d-4bfe-ba98-e0ee856f3e7b" or id eq "25769c6c-d34d-4bfe-ba98-e0ee856f3e7c" or id eq "25769c6c-d34d-4bfe-ba98-e0ee856f3e7d")',
+                "SELECT sftdp FROM Webchain\ScimFilterToDqb\Tests\Entity\User sftdp LEFT JOIN sftdp.emails sftdj1 WHERE sftdj1.value LIKE '%@example.com%' AND (sftdp.id = ?1 OR sftdp.id = ?2 OR sftdp.id = ?3 OR sftdp.id = ?4)",
+                [1 => '25769c6c-d34d-4bfe-ba98-e0ee856f3e7a', 2 => '25769c6c-d34d-4bfe-ba98-e0ee856f3e7b', 3 => '25769c6c-d34d-4bfe-ba98-e0ee856f3e7c', 4 => '25769c6c-d34d-4bfe-ba98-e0ee856f3e7d']
+            ],
         ];
     }
 
